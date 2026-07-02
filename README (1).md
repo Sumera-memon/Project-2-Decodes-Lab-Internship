@@ -31,7 +31,6 @@ Run locally at: `http://127.0.0.1:5000`
 ```bash
 python app.py
 ```
-
 ---
 
 ## 🗂️ Project Structure
@@ -262,14 +261,6 @@ numpy
 | Jinja2 Templating | Flask passes model results into HTML dynamically |
 
 ---
-
-## 📁 API Routes
-
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/` | GET | Renders the main dashboard |
-| `/predict` | POST | Accepts flower measurements, returns predicted class + probabilities |
-| `/history` | GET | Returns list of all predictions made this session |
 
 ### `/predict` — Request Body
 
