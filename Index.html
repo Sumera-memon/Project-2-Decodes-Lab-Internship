@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DecodeLabs — Project 2 | Iris Classifier</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --gray-50:  #f8f9fa;
+  --gray-100: #f1f3f5;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+
+  --navy:        #1e3a5f;
+  --navy-mid:    #254d7a;
+  --navy-light:  #2d6093;
+  --navy-pale:   #e8eef5;
+  --navy-pale2:  #d0dcea;
+
+  --white: #ffffff;
+  --green: #2d7a4f;
+  --green-bg: #edf7f1;
+  --red:   #c0392b;
+  --red-bg:#fdf0ef;
+  --amber: #b7791f;
+  --amber-bg:#fef9ee;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --shadow:    0 3px 12px rgba(0,0,0,.09), 0 1px 4px rgba(0,0,0,.05);
+  --r: 10px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--gray-100);
+  color: var(--gray-900);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--gray-200); }
+::-webkit-scrollbar-thumb { background: var(--gray-400); border-radius: 3px; }
+
+/* ── SIDEBAR (glass / blurred) ───────────────────────────── */
+body {
+  background: linear-gradient(160deg, #e9ecf1 0%, #f1f3f5 60%, #e3e8ee 100%);
+  background-attachment: fixed;
+}
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  background: rgba(30, 58, 95, 0.72);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-right: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: 4px 0 24px rgba(0,0,0,.08);
+}
+.brand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  flex-shrink: 0;
+}
+.brand-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: linear-gradient(135deg, #3a6ea5, #1e3a5f);
+  border: 1px solid rgba(255,255,255,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: #fff;
+  letter-spacing: -.5px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  flex-shrink: 0;
+}
+.brand-name { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: -.2px; line-height: 1.3; }
+.brand-sub  { font-size: 10px; color: rgba(255,255,255,.55); margin-top: 2px; }
+
+.nav-tabs {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px 12px; flex: 1; overflow-y: auto;
+}
+.nav-tab 
+{
+  height: 42px; padding: 0 14px;
+  display: flex; align-items: center; gap: 11px;
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,.6);
+  cursor: pointer; border: none; background: none;
+  font-family: 'Inter', sans-serif;
+  border-radius: 8px;
+  border-left: 3px solid transparent;
+  transition: color .15s, background .15s, border-color .15s;
+  white-space: nowrap; text-align: left; width: 100%;
+}
+.nav-tab:hover { color: #fff; background: rgba(255,255,255,.07); }
+.nav-tab.active { color: #fff; background: rgba(255,255,255,.12); border-left-color: #fff; font-weight: 600; }
+.nav-tab .ti { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+
+.nav-right {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.1);
+  display: flex; flex-direction: column; gap: 8px;
+  flex-shrink: 0;
+}
+.status-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  padding: 6px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; color: #fff;
+  width: fit-content;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: blink 2s infinite; flex-shrink: 0; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+.url-pill {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: rgba(255,255,255,.55);
+  background: rgba(255,255,255,.06);
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  width: fit-content;
+}
+
+/* ── LAYOUT ──────────────────────────────────────────────── */
+.page { display: none; max-width: 1180px; padding: 36px 32px 64px; margin-left: 246px; }
+@media(max-width:900px) { .page { margin-left: 16px; } .sidebar { display: none; } }
+.page.active { display: block; }
+
+/* ── HERO BANNER ─────────────────────────────────────────── */
+.hero-banner {
+  background: linear-gradient(120deg, #1e3a5f 0%, #2d6093 55%, #1e3a5f 100%);
+  border-radius: 18px;
+  padding: 36px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(30,58,95,.25);
+  margin-top: 30px;
+}
+.hero-banner::before {
+  content: '';
+  position: absolute; top: -60px; right: -40px;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle, rgba(255,255,255,.08), transparent 70%);
+  border-radius: 50%;
+}
+.hero-banner::after {
+  content: '';
+  position: absolute; bottom: -80px; left: 20%;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(255,255,255,.05), transparent 70%);
+  border-radius: 50%;
+}
+.hero-left { position: relative; z-index: 1; flex: 1; min-width: 280px; }
+.hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.6); margin-bottom: 10px; }
+.hero-title { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -.5px; margin-bottom: 10px; }
+.hero-sub { font-size: 13px; color: rgba(255,255,255,.75); line-height: 1.7; max-width: 480px; margin-bottom: 18px; }
+.hero-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.hero-tag { font-size: 11px; font-weight: 600; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); padding: 5px 12px; border-radius: 20px; }
+
+.hero-right { position: relative; z-index: 1; width: 140px; height: 140px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ring-svg { width: 140px; height: 140px; position: absolute; top: 0; left: 0; }
+#ringProgress { transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1); }
+.ring-label { text-align: center; }
+.ring-val { font-size: 28px; font-weight: 800; color: #fff; font-family: 'JetBrains Mono', monospace; }
+.ring-sub { font-size: 10px; color: rgba(255,255,255,.6); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+@media(max-width:760px) { .hero-banner { flex-direction: column; text-align: center; } .hero-tags { justify-content: center; } }
+
+/* ── ENTRANCE ANIMATIONS ─────────────────────────────────── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px);} to { opacity:1; transform:translateY(0);} }
+.hero-banner { animation: fadeUp .5s ease both; }
+.stat-row .stat { animation: fadeUp .5s ease both; }
+.stat-row .stat:nth-child(1){animation-delay:.05s}.stat-row .stat:nth-child(2){animation-delay:.1s}.stat-row .stat:nth-child(3){animation-delay:.15s}.stat-row .stat:nth-child(4){animation-delay:.2s}.stat-row .stat:nth-child(5){animation-delay:.25s}.stat-row .stat:nth-child(6){animation-delay:.3s}
+
+/* ── SECTION HEADING ─────────────────────────────────────── */
+.sh {
+  margin: 36px 0 16px;
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.sh:first-child { margin-top: 0; }
+.sh h2 { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+.sh p  { font-size: 12px; color: var(--gray-500); margin-left: 10px; }
+.sh-line { flex: 1; height: 1px; background: var(--gray-200); margin-left: 14px; }
+
+/* ── CARDS ───────────────────────────────────────────────── */
+.card {
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card-head {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--gray-200);
+  font-size: 13px; font-weight: 700; color: var(--gray-800);
+  display: flex; align-items: center; gap: 8px;
+  background: var(--gray-50);
+}
+.card-body { padding: 20px; }
+.card-pad  { padding: 20px; }
+
+/* ── STAT CARDS ──────────────────────────────────────────── */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px,1fr)); gap: 12px; }
+.stat {
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.6); border-radius: var(--r); padding: 18px 20px;
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow .2s, transform .2s;
+  border-top: 3px solid var(--ac, var(--navy));
+}
+.stat:hover { box-shadow: 0 10px 28px rgba(30,58,95,.14); transform: translateY(-3px) scale(1.015); }
+.stat .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--gray-500); }
+.stat .val { font-size: 30px; font-weight: 800; font-family: 'JetBrains Mono', monospace; margin: 8px 0 3px; }
+.stat .sub { font-size: 11px; color: var(--gray-400); }
+
+/* ── GRIDS ───────────────────────────────────────────────── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+.g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+@media(max-width:860px){ .g2,.g3,.g4{ grid-template-columns:1fr; } }
+
+/* ── PIPELINE ────────────────────────────────────────────── */
+.pipeline {
+  background: var(--white); border: 1px solid var(--gray-200);
+  border-radius: var(--r); padding: 20px 28px;
+  display: flex; align-items: center; overflow-x: auto; gap: 0;
+  box-shadow: var(--shadow-xs);
+}
+.ps { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 110px; }
+.ps-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--navy); color: #fff;
+  font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ps-t { font-size: 12px; font-weight: 700; color: var(--gray-800); }
+.ps-s { font-size: 10px; color: var(--gray-500); margin-top: 2px; }
+.ps-arr { color: var(--gray-300); font-size: 20px; padding: 0 12px; flex-shrink: 0; font-weight: 300; }
+
+/* ── CONFUSION MATRIX ────────────────────────────────────── */
+.cm { display: grid; grid-template-columns: auto repeat(3,1fr); gap: 4px; }
+.cm-h  { background: var(--gray-100); border: 1px solid var(--gray-200); border-radius: 6px; padding: 7px 5px; text-align: center; font-size: 10px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: .4px; }
+.cm-rl { display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 10px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; white-space: nowrap; }
+.cm-c  { border-radius: 7px; padding: 14px 5px; text-align: center; font-weight: 800; font-size: 20px; font-family: 'JetBrains Mono', monospace; transition: transform .15s; }
+.cm-c:hover { transform: scale(1.08); }
+.cm-tp { background: #edf7f1; color: var(--green); border: 1px solid #b2dfca; }
+.cm-fp { background: var(--gray-50); color: var(--gray-400); border: 1px solid var(--gray-200); }
+
+/* ── K CHART ─────────────────────────────────────────────── */
+.kc { display: flex; align-items: flex-end; gap: 4px; height: 120px; }
+.kc-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; justify-content: flex-end; }
+.kc-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 4px; background: var(--navy-pale); border: 1px solid var(--navy-pale2); transition: background .2s; }
+.kc-bar:hover { background: var(--navy-light); }
+.kc-bar.best { background: var(--navy); border-color: var(--navy-mid); }
+.kc-lbl { font-size: 8px; color: var(--gray-400); font-family: 'JetBrains Mono', monospace; }
+
+/* ── TABLE ───────────────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { padding: 10px 16px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--gray-500); border-bottom: 2px solid var(--gray-200); background: var(--gray-50); white-space: nowrap; }
+.tbl td { padding: 12px 16px; font-size: 13px; color: var(--gray-700); border-bottom: 1px solid var(--gray-100); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tbody tr:hover td { background: var(--navy-pale); }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--navy); background: var(--navy-pale); padding: 2px 8px; border-radius: 5px; }
+
+/* ── PREDICTOR ───────────────────────────────────────────── */
+.pred-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(185px,1fr)); gap: 14px; margin-bottom: 18px; }
+.field label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--gray-600); margin-bottom: 6px; }
+.field input {
+  width: 100%; background: var(--gray-50); border: 1px solid var(--gray-300);
+  border-radius: 8px; padding: 10px 13px;
+  font-size: 14px; font-family: 'JetBrains Mono', monospace;
+  color: var(--gray-900); outline: none; transition: all .2s;
+}
+.field input:focus { border-color: var(--navy); background: var(--white); box-shadow: 0 0 0 3px var(--navy-pale); }
+.navy-btn {
+  background: var(--navy); color: #fff; border: none;
+  border-radius: 8px; padding: 11px 26px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background .2s, transform .15s;
+  box-shadow: 0 2px 6px rgba(30,58,95,.3);
+}
+.navy-btn:hover { background: var(--navy-mid); transform: translateY(-1px); }
+.pred-out { display: none; margin-top: 18px; border: 1px solid var(--gray-200); border-radius: var(--r); overflow: hidden; }
+.pred-out.show { display: block; }
+.pred-head { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); }
+.pred-species { font-size: 22px; font-weight: 800; }
+.pred-meta { font-size: 12px; color: var(--gray-500); margin-top: 3px; }
+.pred-body { padding: 16px 20px; background: var(--gray-50); }
+.pb { display: flex; align-items: center; gap: 12px; }
+.pb + .pb { margin-top: 9px; }
+.pb-lbl { font-size: 12px; font-weight: 600; width: 82px; color: var(--gray-600); text-transform: capitalize; }
+.pb-track { flex: 1; height: 8px; background: var(--gray-200); border-radius: 4px; overflow: hidden; }
+.pb-fill  { height: 100%; border-radius: 4px; transition: width .7s cubic-bezier(.4,0,.2,1); }
+.pb-pct   { font-size: 12px; font-weight: 700; width: 38px; text-align: right; font-family: 'JetBrains Mono', monospace; color: var(--gray-600); }
+
+/* ── ALGO CARDS ──────────────────────────────────────────── */
+.algo-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 14px; }
+.ac {
+  background: var(--white); border: 1px solid var(--gray-200);
+  border-radius: var(--r); padding: 20px; box-shadow: var(--shadow-xs);
+  transition: box-shadow .2s, transform .2s; position: relative;
+}
+.ac:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.ac.winner { border-color: var(--navy); border-width: 1.5px; }
+.ac .win-tag { position: absolute; top: 14px; right: 14px; background: var(--navy-pale); color: var(--navy); border: 1px solid var(--navy-pale2); padding: 2px 9px; border-radius: 12px; font-size: 10px; font-weight: 700; }
+.ac-name { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+.ac-desc { font-size: 11px; color: var(--gray-500); margin-bottom: 14px; line-height: 1.5; }
+.ac-row  { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--gray-100); }
+.ac-row:last-of-type { border-bottom: none; }
+.ac-k { font-size: 11px; color: var(--gray-500); font-weight: 600; }
+.ac-v { font-size: 13px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.ac-bar { height: 3px; background: var(--gray-100); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+.ac-bar-fill { height: 100%; background: var(--navy); border-radius: 2px; }
+
+/* ── DATA TABLE ──────────────────────────────────────────── */
+.search-bar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.search-bar input, .search-bar select {
+  background: var(--white); border: 1px solid var(--gray-300);
+  border-radius: 8px; padding: 9px 13px; font-size: 13px;
+  font-family: 'Inter', sans-serif; color: var(--gray-900);
+  outline: none; transition: border-color .2s;
+}
+.search-bar input { flex: 1; min-width: 200px; }
+.search-bar input:focus, .search-bar select:focus { border-color: var(--navy); box-shadow: 0 0 0 3px var(--navy-pale); }
+.row-ct { font-size: 12px; font-weight: 600; color: var(--gray-500); margin-left: auto; }
+.dtbl-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--gray-200); }
+.dtbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dtbl th { background: var(--gray-50); padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--gray-500); border-bottom: 1px solid var(--gray-200); cursor: pointer; white-space: nowrap; user-select: none; }
+.dtbl th:hover { color: var(--navy); }
+.dtbl td { padding: 9px 14px; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.dtbl tr:last-child td { border-bottom: none; }
+.dtbl tbody tr:hover td { background: var(--navy-pale); }
+.dcls { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: 11px; font-weight: 700; font-family: 'Inter', sans-serif; text-transform: capitalize; }
+.pg { display: flex; align-items: center; gap: 5px; margin-top: 14px; flex-wrap: wrap; }
+.pg-b { padding: 5px 10px; border: 1px solid var(--gray-300); border-radius: 6px; background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--gray-700); transition: all .15s; font-family: 'Inter', sans-serif; }
+.pg-b:hover:not(:disabled) { border-color: var(--navy); color: var(--navy); background: var(--navy-pale); }
+.pg-b.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+.pg-b:disabled { opacity: .4; cursor: default; }
+
+/* ── SCATTER ─────────────────────────────────────────────── */
+.scatter-cv { width: 100%; height: 320px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; display: block; cursor: crosshair; }
+.axis-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.ax-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-500); width: 54px; }
+.ax-tab { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--gray-300); background: var(--white); color: var(--gray-600); font-family: 'Inter', sans-serif; transition: all .15s; }
+.ax-tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+.ax-tab:hover:not(.active) { border-color: var(--navy); color: var(--navy); }
+.sc-legend { display: flex; gap: 18px; margin-top: 12px; }
+.sc-leg { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--gray-600); text-transform: capitalize; }
+.sc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── TRAINING LOG ────────────────────────────────────────── */
+.log-term {
+  background: #1e2433; border-radius: var(--r); padding: 20px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  height: 420px; overflow-y: auto; border: 1px solid #2d3548;
+}
+.log-row { display: flex; gap: 14px; padding: 2px 0; line-height: 1.7; }
+.log-t  { color: #4a5568; flex-shrink: 0; }
+.log-m  { color: #cbd5e0; }
+.log-m.ok   { color: #68d391; }
+.log-m.info { color: #76e4f7; }
+.log-m.k    { color: #fbd38d; }
+.log-m.done { color: #d6bcfa; font-weight: 600; }
+
+
+/* ── CODE ────────────────────────────────────────────────── */
+.code-block { background: #1e2433; border-radius: var(--r); padding: 22px; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.85; overflow-x: auto; color: #cbd5e0; }
+.kw{color:#bf7af0} .fn{color:#63d4f7} .st{color:#68d391} .cm{color:#4a5568;font-style:italic} .nb{color:#fbd38d}
+
+/* ── HISTORY ─────────────────────────────────────────────── */
+.h-empty { text-align: center; padding: 48px; color: var(--gray-400); }
+.h-empty .big { font-size: 38px; margin-bottom: 10px; }
+.h-item { display: flex; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid var(--gray-100); transition: background .15s; }
+.h-item:last-child { border-bottom: none; }
+.h-item:hover { background: var(--gray-50); }
+.h-num  { width: 26px; height: 26px; border-radius: 50%; background: var(--navy-pale); color: var(--navy); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.h-cls  { font-size: 14px; font-weight: 700; text-transform: capitalize; }
+.h-inp  { font-size: 11px; color: var(--gray-500); font-family: 'JetBrains Mono', monospace; }
+.h-conf { font-size: 13px; font-weight: 700; color: var(--navy); font-family: 'JetBrains Mono', monospace; }
+.h-time { font-size: 11px; color: var(--gray-400); font-family: 'JetBrains Mono', monospace; }
+
+/* ── SPECIES REF CARDS ───────────────────────────────────── */
+.spec-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--r); padding: 20px; box-shadow: var(--shadow-xs); }
+.spec-card .emoji { font-size: 24px; margin-bottom: 8px; }
+.spec-card h3 { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+.spec-card p  { font-size: 12px; color: var(--gray-500); line-height: 1.6; margin-bottom: 12px; }
+.spec-range { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--gray-500); line-height: 1.9; }
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">IC</div>
+    <div>
+      <div class="brand-name">Iris Classification Engine</div>
+      <div class="brand-sub">AI Project · Batch 2026</div>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="go('overview',this)"><span class="ti">📊</span> Dashboard</button>
+    <button class="nav-tab" onclick="go('predictor',this)"><span class="ti">🔬</span> Live Predictor</button>
+    <button class="nav-tab" onclick="go('history',this)"><span class="ti">📋</span> History <span id="hBadge" style="font-size:10px;background:rgba(255,255,255,.2);padding:1px 6px;border-radius:10px;margin-left:2px">0</span></button>
+    <button class="nav-tab" onclick="go('compare',this)"><span class="ti">⚖️</span> Compare</button>
+    <button class="nav-tab" onclick="go('explorer',this)"><span class="ti">🔭</span> Explorer</button>
+    <button class="nav-tab" onclick="go('dataset',this)"><span class="ti">🗃️</span> Data Table</button>
+    <button class="nav-tab" onclick="go('log',this)"><span class="ti">🖥️</span> Training Log</button>
+    <button class="nav-tab" onclick="go('about',this)"><span class="ti">👤</span> About</button>
+  </div>
+
+  <div class="nav-right">
+    <div class="status-pill"><div class="dot"></div> Running</div>
+    <div class="url-pill">127.0.0.1:5000</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:6px;text-align:center">Project made by <strong style="color:rgba(255,255,255,.7)">Sumera</strong></div>
+  </div>
+</aside>
+
+
+<!-- ══ DASHBOARD ════════════════════════════════════════════ -->
+<div class="page active" id="page-overview">
+
+  <!-- HERO BANNER -->
+  <div class="hero-banner">
+    <div class="hero-left">
+      <div class="hero-eyebrow">Project 2 · Data Classification Using AI</div>
+      <h1 class="hero-title">Iris Classification Engine</h1>
+      <p class="hero-sub">A supervised learning system trained on the classic Iris dataset, using K-Nearest Neighbors to classify flowers by species with <strong>{{ results.accuracy }}% accuracy</strong>.</p>
+      <div class="hero-tags">
+        <span class="hero-tag">🐍 Python</span>
+        <span class="hero-tag">🌶️ Flask</span>
+        <span class="hero-tag">🤖 Scikit-Learn</span>
+        <span class="hero-tag">📊 {{ results.total_samples }} Samples</span>
+      </div>
+    </div>
+    <div class="hero-right">
+      <svg viewBox="0 0 140 140" class="ring-svg">
+        <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="10"/>
+        <circle id="ringProgress" cx="70" cy="70" r="60" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377" transform="rotate(-90 70 70)"/>
+      </svg>
+      <div class="ring-label">
+        <div class="ring-val" id="ringVal">0%</div>
+        <div class="ring-sub">Accuracy</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh" style="margin-top:30px"><h2>Model Performance</h2><p>KNN · K={{ results.best_k }} · Iris Dataset · {{ results.total_samples }} samples</p><div class="sh-line"></div></div>
+  <div class="stat-row">
+    <div class="stat" style="--ac:#2d7a4f"><div class="lbl">Accuracy</div><div class="val" style="color:#2d7a4f">{{ results.accuracy }}%</div><div class="sub">{{ results.test_samples }} test samples</div></div>
+    <div class="stat" style="--ac:#1e3a5f"><div class="lbl">F1 Score</div><div class="val" style="color:#1e3a5f">{{ results.f1_score }}</div><div class="sub">Weighted harmonic mean</div></div>
+    <div class="stat" style="--ac:#b7791f"><div class="lbl">Optimal K</div><div class="val" style="color:#b7791f">{{ results.best_k }}</div><div class="sub">Elbow method result</div></div>
+    <div class="stat" style="--ac:#254d7a"><div class="lbl">Train Set</div><div class="val" style="color:#254d7a">{{ results.train_samples }}</div><div class="sub">80% of {{ results.total_samples }}</div></div>
+    <div class="stat" style="--ac:#4a6785"><div class="lbl">Test Set</div><div class="val" style="color:#4a6785">{{ results.test_samples }}</div><div class="sub">20% held out</div></div>
+    <div class="stat" style="--ac:#6b4c9e"><div class="lbl">Classes</div><div class="val" style="color:#6b4c9e">3</div><div class="sub">Setosa · Versicolor · Virginica</div></div>
+  </div>
+
+  <div class="sh"><h2>Pipeline</h2><p>End-to-end ML workflow</p><div class="sh-line"></div></div>
+  <div class="pipeline">
+    <div class="ps"><div class="ps-num">1</div><div><div class="ps-t">Load Dataset</div><div class="ps-s">150 samples · 4 features</div></div></div>
+    <div class="ps-arr">→</div>
+    <div class="ps"><div class="ps-num">2</div><div><div class="ps-t">StandardScaler</div><div class="ps-s">μ=0, σ=1</div></div></div>
+    <div class="ps-arr">→</div>
+    <div class="ps"><div class="ps-num">3</div><div><div class="ps-t">Train/Test Split</div><div class="ps-s">80% / 20%</div></div></div>
+    <div class="ps-arr">→</div>
+    <div class="ps"><div class="ps-num">4</div><div><div class="ps-t">KNN · K={{ results.best_k }}</div><div class="ps-s">Fit → Predict</div></div></div>
+    <div class="ps-arr">→</div>
+    <div class="ps"><div class="ps-num">5</div><div><div class="ps-t">Evaluate</div><div class="ps-s">Accuracy · F1 · CM</div></div></div>
+  </div>
+
+  <div class="sh"><h2>Diagnostics</h2><div class="sh-line"></div></div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-head">🔲 Confusion Matrix</div>
+      <div class="card-body">
+        <div class="cm">
+          <div></div>
+          {% for n in results.class_names %}<div class="cm-h">{{ n }}</div>{% endfor %}
+          {% for i in range(3) %}
+            <div class="cm-rl">{{ results.class_names[i] }}</div>
+            {% for j in range(3) %}<div class="cm-c {{ 'cm-tp' if i==j else 'cm-fp' }}">{{ results.confusion_matrix[i][j] }}</div>{% endfor %}
+          {% endfor %}
+        </div>
+        <p style="margin-top:14px;font-size:11px;color:var(--gray-400)">Perfect diagonal — zero misclassifications on all 30 test samples</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">📈 K vs Accuracy — Elbow Method</div>
+      <div class="card-body">
+        <div class="kc" id="kChart"></div>
+        <div style="font-size:11px;color:var(--gray-400);margin-top:10px;text-align:center">Navy = Best K={{ results.best_k }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh"><h2>Per-Class Report</h2><div class="sh-line"></div></div>
+  <div class="card">
+    <table class="tbl">
+      <thead><tr><th>Species</th><th>Precision</th><th>Recall</th><th>F1-Score</th><th>Support</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="chip" style="background:#edf7f1;color:#2d7a4f;border:1px solid #b2dfca">🌸 Setosa</span></td>
+          <td><span class="mono">1.00</span></td><td><span class="mono">1.00</span></td><td><span class="mono">1.00</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--gray-500)">10</td>
+          <td><span class="chip" style="background:#edf7f1;color:#2d7a4f">✓ Perfect</span></td>
+        </tr>
+        <tr>
+          <td><span class="chip" style="background:#ebf4ff;color:#1e40af;border:1px solid #bfdbfe">🌼 Versicolor</span></td>
+          <td><span class="mono">1.00</span></td><td><span class="mono">1.00</span></td><td><span class="mono">1.00</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--gray-500)">9</td>
+          <td><span class="chip" style="background:#edf7f1;color:#2d7a4f">✓ Perfect</span></td>
+        </tr>
+        <tr>
+          <td><span class="chip" style="background:#f5f0ff;color:#6b21a8;border:1px solid #ddd6fe">🌺 Virginica</span></td>
+          <td><span class="mono">1.00</span></td><td><span class="mono">1.00</span></td><td><span class="mono">1.00</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--gray-500)">11</td>
+          <td><span class="chip" style="background:#edf7f1;color:#2d7a4f">✓ Perfect</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ PREDICTOR ════════════════════════════════════════════ -->
+<div class="page" id="page-predictor">
+  <div class="sh" style="margin-top:30px"><h2>Live Predictor</h2><p>Enter measurements — Flask calls the trained KNN model in real time</p><div class="sh-line"></div></div>
+  <div class="card">
+    <div class="card-head">🔬 Flower Measurement Input</div>
+    <div class="card-body">
+      <div class="pred-grid">
+        <div class="field"><label>Sepal Length (cm)</label><input type="number" id="sl" step="0.1" value="5.1" min="0" max="10"/></div>
+        <div class="field"><label>Sepal Width (cm)</label><input type="number" id="sw" step="0.1" value="3.5" min="0" max="10"/></div>
+        <div class="field"><label>Petal Length (cm)</label><input type="number" id="pl" step="0.1" value="1.4" min="0" max="10"/></div>
+        <div class="field"><label>Petal Width (cm)</label><input type="number" id="pw" step="0.1" value="0.2" min="0" max="10"/></div>
+      </div>
+      <button class="navy-btn" onclick="predict()">Run Classification →</button>
+      <div class="pred-out" id="predOut">
+        <div class="pred-head" id="predHead">
+          <div class="pred-species" id="predSpecies"></div>
+          <div class="pred-meta"   id="predMeta"></div>
+        </div>
+        <div class="pred-body" id="predBody">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--gray-500);margin-bottom:12px">Class Probabilities</div>
+          <div id="probBars"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh"><h2>Species Reference</h2><div class="sh-line"></div></div>
+  <div class="g3">
+    <div class="spec-card" style="border-top:3px solid #2d7a4f">
+      <div class="emoji">🌸</div>
+      <h3 style="color:#2d7a4f">Iris Setosa</h3>
+      <p>Smallest petals. Most distinct class — very easy for KNN to separate. Native to Arctic and Subarctic regions.</p>
+      <div class="spec-range">PL: 1.0–1.9 cm<br/>PW: 0.1–0.6 cm<br/>SL: 4.3–5.8 cm</div>
+    </div>
+    <div class="spec-card" style="border-top:3px solid #1e40af">
+      <div class="emoji">🌼</div>
+      <h3 style="color:#1e40af">Iris Versicolor</h3>
+      <p>Medium-sized petals. Common in North American wetlands. Sits between Setosa and Virginica in feature space.</p>
+      <div class="spec-range">PL: 3.0–5.1 cm<br/>PW: 1.0–1.8 cm<br/>SL: 4.9–7.0 cm</div>
+    </div>
+    <div class="spec-card" style="border-top:3px solid #6b21a8">
+      <div class="emoji">🌺</div>
+      <h3 style="color:#6b21a8">Iris Virginica</h3>
+      <p>Largest petals. Found in Eastern North America. Most similar to Versicolor — hardest pair to distinguish.</p>
+      <div class="spec-range">PL: 4.5–6.9 cm<br/>PW: 1.4–2.5 cm<br/>SL: 4.9–7.9 cm</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HISTORY ═══════════════════════════════════════════════ -->
+<div class="page" id="page-history">
+  <div class="sh" style="margin-top:30px"><h2>Prediction History</h2><p>All classifications made this session</p><div class="sh-line"></div></div>
+  <div class="card">
+    <div class="card-head">
+      📋 Session Log
+      <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--gray-500)" id="hCount">0 predictions</span>
+      <button onclick="clearHist()" style="margin-left:12px;padding:4px 12px;border:1px solid var(--gray-300);border-radius:6px;background:var(--white);font-size:11px;font-weight:600;cursor:pointer;color:var(--gray-600);font-family:'Inter',sans-serif">Clear</button>
+    </div>
+    <div id="hList">
+      <div class="h-empty"><div class="big">🔬</div><div style="font-weight:600">No predictions yet</div><div style="font-size:12px;margin-top:5px">Go to Live Predictor and classify some flowers</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COMPARE ═══════════════════════════════════════════════ -->
+<div class="page" id="page-compare">
+  <div class="sh" style="margin-top:30px"><h2>Algorithm Comparison</h2><p>KNN vs Decision Tree vs Naive Bayes vs SVM on the same dataset and split</p><div class="sh-line"></div></div>
+  <div class="algo-cards" id="algoCards"></div>
+
+  <div class="sh"><h2>Accuracy &amp; F1 — Bar Chart</h2><div class="sh-line"></div></div>
+  <div class="card">
+    <div class="card-head">📊 Head-to-Head Comparison</div>
+    <div class="card-body"><canvas id="algoChart" style="width:100%;height:230px;display:block"></canvas></div>
+  </div>
+
+  <div class="sh"><h2>Confusion Matrices</h2><div class="sh-line"></div></div>
+  <div class="g2" id="algoCMs"></div>
+
+  <div class="sh"><h2>Why KNN Wins</h2><div class="sh-line"></div></div>
+  <div class="card card-pad" style="font-size:13px;line-height:1.9;color:var(--gray-600)">
+    The <strong style="color:var(--navy)">K-Nearest Neighbors</strong> algorithm works perfectly on Iris because the three species are naturally well-separated in 4D feature space — especially petal measurements. After <strong>StandardScaling</strong>, every feature contributes equally to the distance calculation and the Proximity Principle cleanly maps to botanical similarity. Setosa is trivially distinct (tiny petals), while Versicolor and Virginica cluster separately enough for KNN to discriminate with zero errors.
+  </div>
+</div>
+
+<!-- ══ EXPLORER ══════════════════════════════════════════════ -->
+<div class="page" id="page-explorer">
+  <div class="sh" style="margin-top:30px"><h2>Dataset Explorer</h2><p>Interactive charts — see how features separate the three species</p><div class="sh-line"></div></div>
+  <div class="card">
+    <div class="card-head">🔭 Scatter Plot — Switch axes to find decision boundaries</div>
+    <div class="card-body">
+      <div class="axis-row"><span class="ax-lbl">X AXIS</span>
+        <div id="xTabs">
+          <button class="ax-tab active" onclick="setX(0,this)">Sepal Length</button>
+          <button class="ax-tab" onclick="setX(1,this)">Sepal Width</button>
+          <button class="ax-tab" onclick="setX(2,this)">Petal Length</button>
+          <button class="ax-tab" onclick="setX(3,this)">Petal Width</button>
+        </div>
+      </div>
+      <div class="axis-row" style="margin-bottom:16px"><span class="ax-lbl">Y AXIS</span>
+        <div id="yTabs">
+          <button class="ax-tab" onclick="setY(0,this)">Sepal Length</button>
+          <button class="ax-tab" onclick="setY(1,this)">Sepal Width</button>
+          <button class="ax-tab active" onclick="setY(2,this)">Petal Length</button>
+          <button class="ax-tab" onclick="setY(3,this)">Petal Width</button>
+        </div>
+      </div>
+      <canvas class="scatter-cv" id="scatter"></canvas>
+      <div class="sc-legend">
+        <div class="sc-leg"><div class="sc-dot" style="background:#2d7a4f"></div> Setosa (50)</div>
+        <div class="sc-leg"><div class="sc-dot" style="background:#1e40af"></div> Versicolor (50)</div>
+        <div class="sc-leg"><div class="sc-dot" style="background:#6b21a8"></div> Virginica (50)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh"><h2>Feature Distributions</h2><p>Mean values per species per feature</p><div class="sh-line"></div></div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-head">📏 Mean Feature Values by Species</div>
+      <div class="card-body"><canvas id="barChart" style="width:100%;height:250px;display:block"></canvas>
+        <div class="sc-legend" style="margin-top:12px">
+          <div class="sc-leg"><div class="sc-dot" style="background:#2d7a4f"></div>Setosa</div>
+          <div class="sc-leg"><div class="sc-dot" style="background:#1e40af"></div>Versicolor</div>
+          <div class="sc-leg"><div class="sc-dot" style="background:#6b21a8"></div>Virginica</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head">📊 Feature Means Table</div>
+      <div style="overflow:hidden">
+        <table class="dtbl" id="statsTable">
+          <thead><tr><th>Feature</th><th>Setosa</th><th>Versicolor</th><th>Virginica</th></tr></thead>
+          <tbody id="statsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh"><h2>Species Profiles</h2><div class="sh-line"></div></div>
+  <div class="g3">
+    <div class="spec-card" style="border-top:3px solid #2d7a4f">
+      <div class="emoji">🌸</div><h3 style="color:#2d7a4f">Setosa</h3>
+      <p>Most compact petals. Completely distinct cluster in feature space — zero overlap with others.</p>
+      <div class="spec-range">SL: 4.3–5.8 · SW: 2.3–4.4<br/>PL: 1.0–1.9 · PW: 0.1–0.6</div>
+    </div>
+    <div class="spec-card" style="border-top:3px solid #1e40af">
+      <div class="emoji">🌼</div><h3 style="color:#1e40af">Versicolor</h3>
+      <p>Medium measurements. Slight overlap with Virginica on petal width at the boundary.</p>
+      <div class="spec-range">SL: 4.9–7.0 · SW: 2.0–3.4<br/>PL: 3.0–5.1 · PW: 1.0–1.8</div>
+    </div>
+    <div class="spec-card" style="border-top:3px solid #6b21a8">
+      <div class="emoji">🌺</div><h3 style="color:#6b21a8">Virginica</h3>
+      <p>Largest petals. Most similar to Versicolor — the hardest pair to classify for weaker models.</p>
+      <div class="spec-range">SL: 4.9–7.9 · SW: 2.2–3.8<br/>PL: 4.5–6.9 · PW: 1.4–2.5</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DATA TABLE ════════════════════════════════════════════ -->
+<div class="page" id="page-dataset">
+  <div class="sh" style="margin-top:30px"><h2>Full Dataset</h2><p>All 150 Iris samples — search, filter, sort</p><div class="sh-line"></div></div>
+  <div class="card">
+    <div class="card-head">🗃️ Iris Dataset — 150 Records</div>
+    <div class="card-body">
+      <div class="search-bar">
+        <input type="text" id="tSearch" placeholder="🔍  Search species or measurements..." oninput="filterTbl()"/>
+        <select id="tFilter" onchange="filterTbl()">
+          <option value="">All Species</option>
+          <option value="setosa">🌸 Setosa</option>
+          <option value="versicolor">🌼 Versicolor</option>
+          <option value="virginica">🌺 Virginica</option>
+        </select>
+        <span class="row-ct" id="rowCt">150 rows</span>
+      </div>
+      <div class="dtbl-wrap">
+        <table class="dtbl">
+          <thead><tr>
+            <th onclick="sortTbl('id')"># ↕</th>
+            <th onclick="sortTbl('sl')">Sepal L ↕</th>
+            <th onclick="sortTbl('sw')">Sepal W ↕</th>
+            <th onclick="sortTbl('pl')">Petal L ↕</th>
+            <th onclick="sortTbl('pw')">Petal W ↕</th>
+            <th>Species</th>
+          </tr></thead>
+          <tbody id="tBody"></tbody>
+        </table>
+      </div>
+      <div class="pg" id="tPg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TRAINING LOG ══════════════════════════════════════════ -->
+<div class="page" id="page-log">
+  <div class="sh" style="margin-top:30px"><h2>Training Log</h2><p>Live output generated when the Flask server started</p><div class="sh-line"></div></div>
+  <div class="card">
+    <div class="card-head">🖥️ Server Output</div>
+    <div style="padding:0"><div class="log-term" id="logTerm"></div></div>
+  </div>
+</div>
+
+
+<!-- ══ ABOUT ═════════════════════════════════════════════════ -->
+<div class="page" id="page-about">
+  <div class="sh" style="margin-top:30px"><h2>About This Project</h2><p>Developer information </p><div class="sh-line"></div></div>
+
+  <div class="card">
+    <div class="card-head">👤 Developer Profile</div>
+    <div class="card-body" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+      <div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#3a6ea5,#1e3a5f);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 4px 14px rgba(30,58,95,.3)">S</div>
+      <div style="flex:1;min-width:220px">
+        <div style="font-size:20px;font-weight:800;color:var(--gray-900)">Sumera</div>
+        <div style="font-size:13px;color:var(--gray-500);margin-top:2px">AI Intern · Batch 2026 · DecodeLabs</div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <span class="chip" style="background:var(--navy-pale);color:var(--navy);border:1px solid var(--navy-pale2)">🎓 3rd Year, Computer Systems</span>
+          <span class="chip" style="background:#edf7f1;color:#2d7a4f;border:1px solid #b2dfca">🐍 Python · Flask</span>
+          <span class="chip" style="background:#fef9ee;color:#b7791f;border:1px solid #f5e0b3">📊 Scikit-Learn</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh"><h2>Tech Stack</h2><div class="sh-line"></div></div>
+  <div class="g4">
+    <div class="spec-card" style="border-top:3px solid #1e3a5f;text-align:center">
+      <div class="emoji">🐍</div><h3 style="color:#1e3a5f">Python</h3>
+      <p>Core language for data processing and ML logic</p>
+    </div>
+    <div class="spec-card" style="border-top:3px solid #2d7a4f;text-align:center">
+      <div class="emoji">🌶️</div><h3 style="color:#2d7a4f">Flask</h3>
+      <p>Backend server and REST API routes</p>
+    </div>
+    <div class="spec-card" style="border-top:3px solid #b7791f;text-align:center">
+      <div class="emoji">🤖</div><h3 style="color:#b7791f">Scikit-Learn</h3>
+      <p>KNN, Decision Tree, Naive Bayes, SVM models</p>
+    </div>
+    <div class="spec-card" style="border-top:3px solid #6b21a8;text-align:center">
+      <div class="emoji">🎨</div><h3 style="color:#6b21a8">HTML / CSS / JS</h3>
+      <p>Interactive dashboard frontend, no frameworks</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const K_SCORES  = {{ results.k_scores | tojson }};
+const BEST_K    = {{ results.best_k }};
+const ALGO      = {{ results.algo_results | tojson }};
+const ROWS      = {{ results.dataset_rows | tojson }};
+const SCATTER   = {{ results.scatter_data | tojson }};
+const FEATS     = {{ results.feat_names | tojson }};
+const LOG_DATA  = {{ results.training_log | tojson }};
+const CLS       = {{ results.class_names | tojson }};
+
+// ── NAVIGATION ───────────────────────────────────────────────
+function go(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id==='explorer') setTimeout(initExplorer, 60);
+  if (id==='compare')  initCompare();
+  if (id==='dataset')  renderTbl();
+  if (id==='log')      initLog();
+  if (id==='history')  renderHist();
+}
+
+// ── HERO RING + COUNT-UP ANIMATION ──────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const acc = {{ results.accuracy }};
+  const ring = document.getElementById('ringProgress');
+  const ringVal = document.getElementById('ringVal');
+  const circumference = 377;
+  const offset = circumference - (acc/100) * circumference;
+  setTimeout(() => { if(ring) ring.style.strokeDashoffset = offset; }, 200);
+
+  let cur = 0;
+  const step = () => {
+    cur += acc / 40;
+    if (cur >= acc) { cur = acc; }
+    if (ringVal) ringVal.textContent = cur.toFixed(0) + '%';
+    if (cur < acc) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+
+  // Count-up for stat cards
+  document.querySelectorAll('.stat .val').forEach(el => {
+    const raw = el.textContent.trim();
+    const match = raw.match(/^([\d.]+)(.*)$/);
+    if (!match) return;
+    const target = parseFloat(match[1]);
+    const suffix = match[2];
+    const isFloat = match[1].includes('.');
+    let c = 0;
+    const inc = target / 30;
+    const anim = () => {
+      c += inc;
+      if (c >= target) { el.textContent = (isFloat ? target.toFixed(2) : target) + suffix; return; }
+      el.textContent = (isFloat ? c.toFixed(2) : Math.floor(c)) + suffix;
+      requestAnimationFrame(anim);
+    };
+    requestAnimationFrame(anim);
+  });
+});
+
+// ── K CHART ──────────────────────────────────────────────────
+const kc = document.getElementById('kChart');
+Object.entries(K_SCORES).forEach(([k,s]) => {
+  const w = document.createElement('div'); w.className = 'kc-col';
+  const b = document.createElement('div');
+  b.className = 'kc-bar' + (parseInt(k)===BEST_K ? ' best' : '');
+  b.style.height = Math.max(5, ((s-90)/10*100)) + '%';
+  b.title = `K=${k}: ${s}%`;
+  const l = document.createElement('div'); l.className = 'kc-lbl'; l.textContent = k;
+  w.append(b,l); kc.appendChild(w);
+});
+
+// ── PREDICTOR ────────────────────────────────────────────────
+let hist = [];
+const CS = {
+  'setosa':     {color:'#2d7a4f', bg:'#edf7f1', emoji:'🌸', pb:'#2d7a4f'},
+  'versicolor': {color:'#1e40af', bg:'#ebf4ff', emoji:'🌼', pb:'#1e40af'},
+  'virginica':  {color:'#6b21a8', bg:'#f5f0ff', emoji:'🌺', pb:'#6b21a8'},
+};
+
+async function predict() {
+  const b = { sepal_length:document.getElementById('sl').value, sepal_width:document.getElementById('sw').value, petal_length:document.getElementById('pl').value, petal_width:document.getElementById('pw').value };
+  const res  = await fetch('/predict', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(b)});
+  const data = await res.json();
+  const s = CS[data.class] || {color:'#1e3a5f', bg:'#e8eef5', emoji:'🌿', pb:'#1e3a5f'};
+
+  document.getElementById('predSpecies').innerHTML = `<span style="color:${s.color}">${s.emoji} ${data.class.charAt(0).toUpperCase()+data.class.slice(1)}</span>`;
+  document.getElementById('predMeta').textContent = `Confidence: ${data.confidence}% · KNN K=${BEST_K} · via /predict`;
+  document.getElementById('predHead').style.background = s.bg;
+
+  document.getElementById('probBars').innerHTML = Object.entries(data.all_probs).map(([cls,pct]) => {
+    const c = CS[cls]||{pb:'#1e3a5f'};
+    return `<div class="pb"><span class="pb-lbl">${cls}</span><div class="pb-track"><div class="pb-fill" style="width:${pct}%;background:${c.pb}"></div></div><span class="pb-pct">${pct}%</span></div>`;
+  }).join('');
+
+  document.getElementById('predOut').className = 'pred-out show';
+  hist.unshift(data);
+  document.getElementById('hBadge').textContent = hist.length;
+}
+
+// ── HISTORY ──────────────────────────────────────────────────
+function renderHist() {
+  document.getElementById('hCount').textContent = hist.length + ' prediction' + (hist.length!==1?'s':'');
+  if (!hist.length) {
+    document.getElementById('hList').innerHTML = '<div class="h-empty"><div class="big">🔬</div><div style="font-weight:600">No predictions yet</div><div style="font-size:12px;margin-top:5px">Go to Live Predictor and classify some flowers</div></div>';
+    return;
+  }
+  document.getElementById('hList').innerHTML = hist.map((h,i) => {
+    const s = CS[h.class]||{};
+    return `<div class="h-item">
+      <div class="h-num">${hist.length-i}</div>
+      <div>
+        <div class="h-cls" style="color:${s.color||'#1e3a5f'}">${s.emoji||''} ${h.class}</div>
+        <div class="h-inp">SL=${h.inputs.sl} · SW=${h.inputs.sw} · PL=${h.inputs.pl} · PW=${h.inputs.pw}</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div class="h-conf">${h.confidence}%</div>
+        <div class="h-time">${h.timestamp}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function clearHist() { hist=[]; document.getElementById('hBadge').textContent=0; renderHist(); }
+
+// ── ALGO COMPARE ─────────────────────────────────────────────
+let cmpDone = false;
+function initCompare() {
+  if (cmpDone) return; cmpDone = true;
+  const maxAcc = Math.max(...Object.values(ALGO).map(a=>a.accuracy));
+  const icons  = {'KNN':'🌿','Decision Tree':'🌳','Naive Bayes':'🔬','SVM':'⚙️'};
+  const descs  = {'KNN':'Classifies by majority vote of K nearest neighbors.','Decision Tree':'Splits data using if/else rules on feature thresholds.','Naive Bayes':'Uses Bayes theorem assuming feature independence.','SVM':'Finds optimal hyperplane maximizing class margins.'};
+  const cards  = document.getElementById('algoCards');
+
+  Object.entries(ALGO).forEach(([name,d]) => {
+    const win = d.accuracy===maxAcc;
+    cards.innerHTML += `<div class="ac ${win?'winner':''}">
+      ${win?'<div class="win-tag">⭐ Best</div>':''}
+      <div class="ac-name">${icons[name]||'🤖'} ${name}</div>
+      <div class="ac-desc">${descs[name]||''}</div>
+      <div class="ac-row"><span class="ac-k">Accuracy</span><span class="ac-v" style="color:${win?'var(--navy)':'var(--gray-800)'}">${d.accuracy}%</span></div>
+      <div class="ac-row"><span class="ac-k">F1 Score</span><span class="ac-v">${d.f1}</span></div>
+      <div class="ac-row"><span class="ac-k">Precision</span><span class="ac-v">${d.precision}</span></div>
+      <div class="ac-row"><span class="ac-k">Recall</span><span class="ac-v">${d.recall}</span></div>
+      <div class="ac-bar"><div class="ac-bar-fill" style="width:${d.accuracy}%"></div></div>
+    </div>`;
+  });
+
+  // Bar chart
+  const cv = document.getElementById('algoChart');
+  cv.width = cv.clientWidth; cv.height = 230;
+  const ctx = cv.getContext('2d');
+  const W=cv.width, H=230, PL=50, PR=20, PT=28, PB=48;
+  const cW=(W-PL-PR)/Object.keys(ALGO).length, bW=cW*.28;
+
+  ctx.strokeStyle='#e9ecef'; ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){
+    const y=PT+(H-PT-PB)*(1-i/5);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(W-PR,y); ctx.stroke();
+    ctx.fillStyle='#adb5bd'; ctx.font='10px Inter'; ctx.textAlign='right';
+    ctx.fillText((i*20)+'%', PL-6, y+4);
+  }
+
+  Object.entries(ALGO).forEach(([name,d],i) => {
+    const cx=PL+i*cW+cW/2, win=d.accuracy===maxAcc;
+    // Acc bar
+    const ah=(d.accuracy/100)*(H-PT-PB);
+    const ag=ctx.createLinearGradient(0,PT+H-PT-PB-ah,0,H-PB);
+    ag.addColorStop(0, win?'#1e3a5f':'#adb5bd'); ag.addColorStop(1, win?'#254d7a':'#ced4da');
+    ctx.fillStyle=ag; ctx.beginPath(); ctx.roundRect(cx-bW-3,PT+(H-PT-PB)-ah,bW,ah,[4,4,0,0]); ctx.fill();
+    // F1 bar
+    const fh=d.f1*(H-PT-PB);
+    const fg=ctx.createLinearGradient(0,PT+(H-PT-PB)-fh,0,H-PB);
+    fg.addColorStop(0,'#2d7a4f'); fg.addColorStop(1,'#4a9e6e');
+    ctx.fillStyle=fg; ctx.beginPath(); ctx.roundRect(cx+3,PT+(H-PT-PB)-fh,bW,fh,[4,4,0,0]); ctx.fill();
+    // Labels
+    ctx.fillStyle=win?'#1e3a5f':'#6c757d'; ctx.font='bold 11px Inter'; ctx.textAlign='center';
+    ctx.fillText(d.accuracy+'%', cx-bW/2-3, PT+(H-PT-PB)-ah-6);
+    ctx.fillStyle='#2d7a4f';
+    ctx.fillText(d.f1, cx+bW/2+3, PT+(H-PT-PB)-fh-6);
+    ctx.fillStyle='#495057'; ctx.font='11px Inter';
+    ctx.fillText(name, cx, H-12);
+  });
+  ctx.fillStyle='#1e3a5f'; ctx.fillRect(W-160,8,11,9);
+  ctx.fillStyle='#495057'; ctx.font='11px Inter'; ctx.textAlign='left'; ctx.fillText('Accuracy',W-145,17);
+  ctx.fillStyle='#2d7a4f'; ctx.fillRect(W-78,8,11,9);
+  ctx.fillText('F1 Score',W-63,17);
+
+  // Confusion matrices
+  const cmDiv = document.getElementById('algoCMs');
+  Object.entries(ALGO).forEach(([name,d]) => {
+    let h = `<div class="card"><div class="card-head">${icons[name]||''} ${name} — ${d.accuracy}%</div><div class="card-body"><div class="cm">`;
+    h += '<div></div>'; CLS.forEach(c => h+=`<div class="cm-h">${c}</div>`);
+    d.cm.forEach((row,ri) => {
+      h += `<div class="cm-rl">${CLS[ri]}</div>`;
+      row.forEach((v,ci) => h+=`<div class="cm-c ${ri===ci?'cm-tp':'cm-fp'}" style="font-size:17px;padding:11px 4px">${v}</div>`);
+    });
+    h += '</div></div></div>';
+    cmDiv.innerHTML += h;
+  });
+}
+
+// ── EXPLORER ─────────────────────────────────────────────────
+let xA=0, yA=2, expDone=false;
+const DOT_C = ['#2d7a4f','#1e40af','#6b21a8'];
+const MEANS = [[5.006,3.428,1.462,0.246],[5.936,2.770,4.260,1.326],[6.588,2.974,5.552,2.026]];
+
+function setX(i,btn){xA=i;document.querySelectorAll('#xTabs .ax-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');drawScatter();}
+function setY(i,btn){yA=i;document.querySelectorAll('#yTabs .ax-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');drawScatter();}
+
+function initExplorer(){
+  drawScatter();
+  if(expDone)return; expDone=true;
+
+  // Bar chart
+  const bc=document.getElementById('barChart');
+  bc.width=bc.clientWidth; bc.height=250;
+  const ctx=bc.getContext('2d'), W=bc.width, H=250;
+  const PL=42,PR=14,PT=18,PB=40;
+  const cW=(W-PL-PR)/FEATS.length, bW=cW*.22, maxV=7;
+  ctx.strokeStyle='#e9ecef'; ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){const y=PT+(H-PT-PB)*(1-i/5);ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(W-PR,y);ctx.stroke();ctx.fillStyle='#adb5bd';ctx.font='10px Inter';ctx.textAlign='right';ctx.fillText((maxV*i/5).toFixed(1),PL-4,y+4);}
+  FEATS.forEach((f,fi)=>{
+    const gx=PL+fi*cW+cW/2;
+    MEANS.forEach((m,ci)=>{
+      const bh=(m[fi]/maxV)*(H-PT-PB);
+      const bx=gx+(ci-1)*(bW+3)-bW/2;
+      const g=ctx.createLinearGradient(0,PT+(H-PT-PB)-bh,0,H-PB);
+      g.addColorStop(0,DOT_C[ci]); g.addColorStop(1,DOT_C[ci]+'88');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.roundRect(bx,PT+(H-PT-PB)-bh,bW,bh,[3,3,0,0]); ctx.fill();
+    });
+    ctx.fillStyle='#495057';ctx.font='11px Inter';ctx.textAlign='center';ctx.fillText(f.split(' ')[1]||f,gx,H-10);
+  });
+
+  // Stats table
+  const sb=document.getElementById('statsBody');
+  sb.innerHTML=FEATS.map((f,fi)=>`<tr>
+    <td style="font-weight:700;color:var(--gray-800)">${f}</td>
+    <td><span style="color:#2d7a4f;font-weight:700;font-family:'JetBrains Mono',monospace">${MEANS[0][fi]}</span></td>
+    <td><span style="color:#1e40af;font-weight:700;font-family:'JetBrains Mono',monospace">${MEANS[1][fi]}</span></td>
+    <td><span style="color:#6b21a8;font-weight:700;font-family:'JetBrains Mono',monospace">${MEANS[2][fi]}</span></td>
+  </tr>`).join('');
+}
+
+function drawScatter(){
+  const cv=document.getElementById('scatter');
+  if(!cv)return;
+  const ctx=cv.getContext('2d'), W=cv.clientWidth, H=cv.clientHeight;
+  cv.width=W; cv.height=H;
+  const PAD=52, keys=['sl','sw','pl','pw'];
+  const xs=SCATTER.map(d=>d[keys[xA]]), ys=SCATTER.map(d=>d[keys[yA]]);
+  const minX=Math.min(...xs)-.3, maxX=Math.max(...xs)+.3;
+  const minY=Math.min(...ys)-.3, maxY=Math.max(...ys)+.3;
+  const tx=v=>PAD+(v-minX)/(maxX-minX)*(W-PAD*2);
+  const ty=v=>H-PAD-(v-minY)/(maxY-minY)*(H-PAD*2);
+
+  ctx.strokeStyle='#e9ecef'; ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){const gx=PAD+(W-PAD*2)*i/5,gy=PAD+(H-PAD*2)*i/5;ctx.beginPath();ctx.moveTo(gx,PAD);ctx.lineTo(gx,H-PAD);ctx.stroke();ctx.beginPath();ctx.moveTo(PAD,gy);ctx.lineTo(W-PAD,gy);ctx.stroke();}
+  ctx.fillStyle='#adb5bd'; ctx.font='11px Inter'; ctx.textAlign='center';
+  ctx.fillText(FEATS[xA]+' (cm)',W/2,H-8);
+  ctx.save(); ctx.translate(14,H/2); ctx.rotate(-Math.PI/2); ctx.fillText(FEATS[yA]+' (cm)',0,0); ctx.restore();
+
+  SCATTER.forEach(d=>{
+    const cx=tx(d[keys[xA]]),cy=ty(d[keys[yA]]),col=DOT_C[d.cls];
+    ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2);
+    ctx.fillStyle=col+'99'; ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke();
+  });
+}
+
+// ── DATA TABLE ───────────────────────────────────────────────
+let tFiltered=[...ROWS], tSortCol='id', tDir=1, tPage=1;
+const PER=15;
+const CLS_STYLE={0:'background:#edf7f1;color:#2d7a4f',1:'background:#ebf4ff;color:#1e40af',2:'background:#f5f0ff;color:#6b21a8'};
+const CLS_EMOJI={'setosa':'🌸','versicolor':'🌼','virginica':'🌺'};
+
+function filterTbl(){
+  const q=document.getElementById('tSearch').value.toLowerCase();
+  const c=document.getElementById('tFilter').value;
+  tFiltered=ROWS.filter(r=>(!c||r.label===c)&&(!q||r.label.includes(q)||[r.sl,r.sw,r.pl,r.pw].some(v=>String(v).includes(q))));
+  tPage=1; renderTbl();
+}
+function sortTbl(col){if(tSortCol===col)tDir*=-1;else{tSortCol=col;tDir=1;}tFiltered.sort((a,b)=>typeof a[col]==='string'?a[col].localeCompare(b[col])*tDir:(a[col]-b[col])*tDir);renderTbl();}
+function renderTbl(){
+  const s=(tPage-1)*PER, slice=tFiltered.slice(s,s+PER);
+  document.getElementById('rowCt').textContent=tFiltered.length+' rows';
+  document.getElementById('tBody').innerHTML=slice.map(r=>`<tr><td style="color:var(--gray-400)">${r.id}</td><td>${r.sl}</td><td>${r.sw}</td><td>${r.pl}</td><td>${r.pw}</td><td><span class="dcls" style="${CLS_STYLE[r.cls]}">${CLS_EMOJI[r.label]||''} ${r.label}</span></td></tr>`).join('');
+  const pages=Math.ceil(tFiltered.length/PER);
+  let pg=`<button class="pg-b" onclick="goPg(${tPage-1})" ${tPage===1?'disabled':''}>←</button>`;
+  for(let i=1;i<=pages;i++){
+    if(i===1||i===pages||Math.abs(i-tPage)<=1)pg+=`<button class="pg-b ${i===tPage?'active':''}" onclick="goPg(${i})">${i}</button>`;
+    else if(Math.abs(i-tPage)===2)pg+='<span style="padding:0 4px;color:var(--gray-400)">…</span>';
+  }
+  pg+=`<button class="pg-b" onclick="goPg(${tPage+1})" ${tPage===pages?'disabled':''}>→</button>`;
+  document.getElementById('tPg').innerHTML=pg;
+}
+function goPg(p){const pages=Math.ceil(tFiltered.length/PER);if(p<1||p>pages)return;tPage=p;renderTbl();}
+
+// ── TRAINING LOG ─────────────────────────────────────────────
+function initLog(){
+  const t=document.getElementById('logTerm');
+  if(t.children.length)return;
+  LOG_DATA.forEach(l=>{
+    const row=document.createElement('div'); row.className='log-row';
+    let cls='log-m';
+    if(l.msg.includes('ready')||l.msg.includes('100.00'))cls+=' done';
+    else if(l.msg.includes('K='))cls+=' k';
+    else if(l.msg.includes('complete')||l.msg.includes('→'))cls+=' ok';
+    else if(l.msg.includes('Applying')||l.msg.includes('split')||l.msg.includes('Init'))cls+=' info';
+    row.innerHTML=`<span class="log-t">[${l.time}]</span><span class="${cls}">${l.msg}</span>`;
+    t.appendChild(row);
+  });
+  t.scrollTop=t.scrollHeight;
+}
+
+</script>
+</body>
+</html>
